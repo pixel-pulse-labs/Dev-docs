@@ -17,14 +17,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Cob repo
+      - name: Checkout Dev-docs repo
         uses: actions/checkout@v4
 
-      - name: Clone Cob from git.pixel-pulse.dev
-        run: git clone --depth 1 https://github.com/Cob-Software-Foundation/Cob.git cob-src
+      - name: Clone Cob repo
+        run: git clone --depth 1 https://github.com cob-src
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -68,6 +68,13 @@ jobs:
         with:
           path: .
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
