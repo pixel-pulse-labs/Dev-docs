@@ -1,0 +1,73 @@
+name: Build and Inject Cob Dev Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout devs.pixel-pulse.dev repo
+        uses: actions/checkout@v4
+
+      - name: Clone Cob from git.pixel-pulse.dev
+        run: git clone --depth 1 https:/git.pixel-pulse.dev/Cob.git cob-src
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cob-src
+
+      - name: Build Cob workspace documentation
+        working-directory: cob-src
+        run: cargo doc --workspace --no-deps --features enterprise
+
+      - name: Inject docs into cob-dev/
+        run: |
+          rm -rf cob-dev
+          mkdir -p cob-dev
+          cp -r cob-src/target/doc/. cob-dev/
+          rm -f cob-dev/.lock
+          touch .nojekyll
+
+          cat << 'EOF' > cob-dev/index.html
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta http-equiv="refresh" content="0; url=cob_core/index.html">
+              <script>location.replace("cob_core/index.html");</script>
+              <title>Cob Developer Documentation</title>
+            </head>
+            <body>
+              Redirecting to <a href="cob_core/index.html">cob_core</a>...
+            </body>
+          </html>
+          EOF
+
+          rm -rf cob-src
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
