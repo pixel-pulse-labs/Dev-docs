@@ -20,11 +20,11 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout devs.pixel-pulse.dev repo
+      - name: Checkout Cob repo
         uses: actions/checkout@v4
 
       - name: Clone Cob from git.pixel-pulse.dev
-        run: git clone --depth 1 https://git.pixel-pulse.dev/Cob.git cob-src
+        run: git clone --depth 1 https://github.com/Cob-Software-Foundation/Cob.git cob-src
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
